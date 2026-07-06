@@ -9,7 +9,7 @@
 - `services/` — all business logic (streak, feed, search, notifications, playlists).
 
 **Data flow — rating a song:**
-POST /songs/<id>/rate → routes/songs.py:rate() → notification_service.rate_song() → saves rating, commits. No notification is created (unlike add_to_playlist, which does notify).
+POST /songs/<id>/rate → routes/songs.py:rate() → notification_service.rate_song() → validates the score, looks up the song and user, creates or updates a Rating record, and commits.
 
 **Pattern noticed:** routes never contain logic — they just call a service function and return JSON.
 
