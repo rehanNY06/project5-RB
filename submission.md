@@ -21,3 +21,11 @@ POST /songs/<id>/rate → routes/songs.py:rate() → notification_service.rate_s
 5. Last playlist song missing — playlist_service.py
 
 Plan: start with #4 and #5, then #1.
+
+### Issue #5: Last playlist song never shows up
+
+**How I reproduced it:**
+Queried the `playlist_entries` join table directly for playlist "Late Night Vibes" 
+(id 1b15f863-...) and got a count of 7 songs. Hitting GET /playlists/<id>/songs 
+returned only 6 songs — the last one in position order was missing.
+
