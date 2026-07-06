@@ -115,3 +115,17 @@ Sunday — streak correctly incremented from 5 to 6, instead of resetting to 1.
 Checked the `days_since_last == 0` (same-day, no change) and `else` (streak 
 resets after a skipped day) branches were untouched and still behave correctly, 
 since the fix only removed a condition from one branch.
+
+## Git Log Screenshot
+   ![git log output](gitlogsc.png)
+
+## AI Usage
+
+I used AI throughout this project for codebase navigation and debugging, not for writing the fixes themselves.
+
+- Early on, I pasted `models.py`, then each route/service file, and asked for help understanding what each one did and how they connected. This helped me build the codebase map without just listing file names.
+- For Issue #4, I compared `rate_song()` against `add_to_playlist()` in `notification_service.py` with AI's help to spot that one function called `create_notification()` and the other didn't — that's what led me to the missing notification bug.
+- For Issue #1, I didn't know what Python's `datetime.weekday()` actually returns for each day. AI explained that Monday=0 through Sunday=6, which let me see that `!= 6` was silently excluding Sundays from the streak-increment logic.
+- I hit a real debugging trap during testing: my `flask shell` session had the old buggy code cached in memory even after I fixed the file, since `flask shell` doesn't reload changed modules automatically. My test kept showing the bug as unfixed even though the code was correct. I had to restart the shell (`exit()` then relaunch `flask shell`) to get an accurate test — this was something I had to figure out through trial and error, not something AI caught immediately.
+- I also learned the hard way that `flask run` doesn't auto-reload after code edits (debug mode was off), so several of my "fix isn't working" moments were actually just a stale running server, not a bad fix.
+- AI did not diagnose any bug for me directly — for every issue, I read the suspicious code first and formed a hypothesis, and AI helped me verify or explain it (e.g. what a line of code does, why a comparison was wrong), rather than telling me where the bug was before I'd looked.  
