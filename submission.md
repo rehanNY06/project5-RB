@@ -81,3 +81,37 @@ confirming a new "song_rated" notification appeared for the sharer
 (count went from 1 to 2). Checked that re-rating the same song (updating 
 an existing Rating) still creates a new notification each time, which seems 
 reasonable since each new rating is a new event worth notifying about.
+
+### Issue #1: Listening streak keeps resetting
+
+**How I reproduced it:**
+Manually set user "darius" (a1feb4b4-...) to have `last_listened_at` = 
+July 4, 2026 (a Saturday) and `listening_streak` = 5, via flask shell. 
+Then called POST /songs/<id>/listen for that user on July 5, 2026 (a Sunday) 
+— a genuine consecutive day. Checked GET /users/<id>/streak afterward: 
+expected streak = 6, but it showed streak = 1.
+
+**How I found the root cause:**
+Read through `update_listening_streak()` in `streak_service.py`. The comparison 
+that increments the streak was `elif days_since_last == 1 and today.weekday() != 6`. 
+I checked what `weekday()` returns in Python — Monday=0 through Sunday=6 — so 
+`!= 6` means "today is not Sunday." That meant the increment branch was silently 
+skipped on Sundays even when someone listened on a genuinely consecutive day, 
+falling through to the reset branch instead.
+
+**The root cause:**
+The streak-increment condition had an extra, incorrect clause tacked onto the 
+"consecutive day" check: `and today.weekday() != 6`. This excluded Sundays 
+specifically from ever counting as a valid streak continuation, so any user 
+who listened on back-to-back days where the second day was a Sunday had their 
+streak reset to 1 instead of incremented — even though nothing about their 
+actual listening behavior was different from any other day.
+
+**My fix and side-effect check:**
+Removed the `and today.weekday() != 6` clause, leaving just `elif days_since_last == 1`. 
+Verified by directly calling `update_listening_streak()` with a user whose 
+`last_listened_at` was set to a Saturday and a `now` value on the following 
+Sunday — streak correctly incremented from 5 to 6, instead of resetting to 1. 
+Checked the `days_since_last == 0` (same-day, no change) and `else` (streak 
+resets after a skipped day) branches were untouched and still behave correctly, 
+since the fix only removed a condition from one branch.
